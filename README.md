@@ -26,3 +26,10 @@
 | User | Password | URL Access |
 | :--- | :--- | :--- |
 | Admin | zabbix | http://<ZABBIX_SERVER_IP>:8080 |
+
+## Config monitor zabbix server
+
+```
+Zabbix Console Login -> Monitoring  -> Hosts -> Host "Zabbix server" -> Configuration -> Interface -> Choose "Connect to" is "DNS" -> Replace DNS Name with "zabbix-agent" -> Update
+```
+![Alt Text](zabbix.png)
