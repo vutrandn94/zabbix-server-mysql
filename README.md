@@ -21,3 +21,8 @@
 ```
 # docker-compose up -d
 ```
+
+## Default access info
+| User | Password | URL Access |
+| :--- | :--- | :--- |
+| Admin | zabbix | http://<ZABBIX_SERVER_IP>:8080 |
