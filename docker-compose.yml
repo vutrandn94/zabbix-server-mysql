@@ -1,0 +1,87 @@
+# https://hub.docker.com/r/zabbix/zabbix-server-mysql
+# https://hub.docker.com/_/mysql
+# https://hub.docker.com/r/zabbix/zabbix-web-apache-mysql/
+# https://hub.docker.com/r/zabbix/zabbix-agent2
+services:
+  db:
+    image: 'mysql:8.0.41'
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "<PASSWORD_ROOT_MYSQL>" ## Example => MYSQL_ROOT_PASSWORD: "mypassword"
+      MYSQL_DATABASE: "zabbix"
+      TZ: "<TIMEZONE>" ## Example => TZ: "Asia/Ho_Chi_Minh"
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    networks:
+      - zabbix-net
+  zabbix-agent:
+    image: 'zabbix/zabbix-agent2:alpine-6.0-latest'
+    restart: always
+    hostname: "zabbix-agent"
+    environment:
+      ZBX_SERVER_HOST: "zabbix-server"
+      ZBX_HOSTNAME: "zabbix-agent"
+      TZ: "<TIMEZONE>" ## Example => TZ: "Asia/Ho_Chi_Minh"
+      ZBX_DEBUGLEVEL: 3
+      ZBX_SERVER: "zabbix-server,<ZABBIX_NETWORK_IPAM_GATEWAY>" ## Example => ZBX_SERVER: "zabbix-server,192.168.10.1" 
+    ports:
+      - 10050:10050
+    networks:
+      - zabbix-net
+    depends_on:
+      - zabbix-server
+  zabbix-server:
+    image: 'zabbix/zabbix-server-mysql:alpine-6.0-latest'
+    restart: always
+    hostname: "zabbix-server"
+    environment:
+      TZ: "<TIMEZONE>" ## Example => TZ: "Asia/Ho_Chi_Minh"
+      PHP_TZ: "<TIMEZONE>" ## Example => PHP_TZ: "Asia/Ho_Chi_Minh"
+      ZBX_SERVER_HOST: "zabbix-server"
+      MYSQL_USER: "root"
+      MYSQL_PASSWORD: "<PASSWORD_ROOT_MYSQL>" ## Example => MYSQL_ROOT_PASSWORD: "mypassword"
+      DB_SERVER_HOST: "db"
+      ZBX_SERVER_NAME: "zabbix-server"
+      ZBX_DEBUGLEVEL: 3
+      ZBX_LISTENIP: "0.0.0.0"
+      ZBX_HOUSEKEEPINGFREQUENCY: 1
+      ZBX_MAXHOUSEKEEPERDELETE: 5000
+      ZBX_PROBLEMHOUSEKEEPINGFREQUENCY: 60
+    ports:
+      - 10051:10051
+    volumes:
+      - ./alertscripts:/usr/lib/zabbix/alertscripts:ro
+    networks:
+      - zabbix-net
+  zabbix-server-web:
+    image: 'zabbix/zabbix-web-apache-mysql:alpine-6.0-latest'
+    restart: always
+    hostname: "zabbix-server-web"
+    environment:
+      TZ: "<TIMEZONE>" ## Example => TZ: "Asia/Ho_Chi_Minh"
+      PHP_TZ: "<TIMEZONE>" ## Example => PHP_TZ: "Asia/Ho_Chi_Minh"
+      ZBX_SERVER_HOST: "zabbix-server"
+      MYSQL_USER: "root"
+      MYSQL_PASSWORD: "<PASSWORD_ROOT_MYSQL>" ## Example => MYSQL_ROOT_PASSWORD: "mypassword"
+      DB_SERVER_HOST: "db"
+      ZBX_SERVER_NAME: "zabbix-server"
+      EXPOSE_WEB_SERVER_INFO: "on"
+      ZBX_MEMORYLIMIT: "256M"
+    ports:
+      - 8080:8080
+    networks:
+      - zabbix-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+networks:
+  zabbix-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "<ZABBIX_NETWORK_IPAM_BLOCK>" ## Example => subnet: "192.168.10.0/24"
+          gateway: "<ZABBIX_NETWORK_IPAM_GATEWAY>" ## Example => gateway: "192.168.10.1"
