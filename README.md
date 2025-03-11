@@ -1,2 +1,1 @@
-# zabbix-server-mysql
-zabbix-server-mysql
+# Deploy Zabbix server MySQL using docker, docker-compose
